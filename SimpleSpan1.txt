@@ -1,0 +1,56 @@
+# Hierarchical IntRem measurement model for Simple Span experiment, version with log-normal distribution of Parms
+
+model{
+   
+   # For each subject
+   
+for (i in 1:Nsub)  {
+
+                    # draw parameters from Gaussian distribution over subjects (censored at 0 and a very high upper level)
+                	  # C = Binding, A = Activation
+                	  
+                	  C[i] ~ dlnorm(muC, lbdC)
+                	  A[i] ~ dlnorm(muA, lbdA)
+                	  F[i] <- 1/(1+exp(-xx[i]))
+                	           xx[i] ~ dnorm(muF, lbdF)
+                    
+                    # calculate the evidence for either possible response (1 = correct, 2 = wrong pos, 3 = previous, 4 = wrong)
+                		evi[i, 1] <- 0.1 + C[i] + A[i] 
+                		evi[i, 2] <- 0.1 + A[i]
+                		evi[i, 3] <- 0.1 + F[i] * A[i]
+                		evi[i, 4] <- 0.1
+                		
+                	  # Luce choice rule to translate evidence into probability 
+                   	sumevi[i] <- inprod(evi[i,1:4],ch)		
+                       		
+                       		for (cat in 1:4) {
+                	        P[i,cat] <- (evi[i,cat]/sumevi[i]) * ch[cat]
+                        	}
+                        	                  
+                    # Likelihood with R = frequency of correct, wrong and wrong position responses
+                    R[i,1:4] ~ dmulti(P[i,1:4], N[i])     	 
+                    
+                    }
+
+   # Priors 
+   meanC <- 3
+   meanA <- 0
+   meanF <- 0
+   tauPrior <- 0.01
+   
+   # prior on parameter means: normal distribution -> means of the normal of the log-normal
+   
+   # prior on parameter means: normal distribution -> means of the normal of the log-normal
+   muA ~ dnorm(meanA, tauPrior)  
+   muC ~ dnorm(meanC, tauPrior)
+   muF ~ dnorm(meanF, tauPrior)
+
+   sgA ~ dgamma(1,0.01)
+   sgC ~ dgamma(1,0.01)
+   sgF ~ dgamma(1,0.01)
+   
+   lbdA <- 1/pow(sgA,2)
+   lbdC <- 1/pow(sgC,2)
+   lbdF <- 1/pow(sgF,2)
+
+}
