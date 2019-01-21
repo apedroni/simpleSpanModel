@@ -1,4 +1,6 @@
-## Sequence Memory Model with age
+## Simple Span model with two timepoints 
+# this script can be run with the 2017 pilot data for the test-retest study
+# note that the different variations of the models are in archive.
 
 rm(list=ls())
 setwd("~/Dropbox/AA_Neurometric/ANALYSES/SimplespanAnalyses/Modeling/")
@@ -7,25 +9,28 @@ require(R2jags)
 library(tidyr)
 library(plyr)
 library(reshape2)
-#library(HDInterval)
-  ## read and prepare data
-hier = 1
-noF = 1
+
+hier =TRUE # do hierachical bayesian model
+noF = TRUE # do include F as a intrusion parameter (not applicable in 2018 dataset)
+traceP <- T  # trace individual's parameters
+
+## read and prepare data
 data = read.table("SimpleSpan4Modeling.csv",sep=',',header = TRUE)
 
+colnames(data) = c("ID","correct_T1","wrong_pos_T1","previous_T1","not_remembered_T1","correct_T2","wrong_pos_T2","previous_T2","not_remembered_T2")
 
-## Performance by age
+# put the dataframe to an array
 R1 = array(NA, dim=c(length(data[,1]) ,4))
-R1[,1] = data$Correct1
-R1[,2] = data$WrongPos1
-R1[,3] = data$Previous1
-R1[,4] = data$Wrong1
+R1[,1] = data$correct_T1
+R1[,2] = data$wrong_pos_T1
+R1[,3] = data$previous_T1
+R1[,4] = data$not_remembered_T1
 
 R2 = array(NA, dim=c(length(data[,1]) ,4))
-R2[,1] = data$Correct2
-R2[,2] = data$WrongPos2
-R2[,3] = data$Previous2
-R2[,4] = data$Wrong2
+R2[,1] = data$correct_T2
+R2[,2] = data$wrong_pos_T2
+R2[,3] = data$previous_T2
+R2[,4] = data$not_remembered_T2
 
 R <- rbind(R1,R2)
 
@@ -35,18 +40,23 @@ Nsub = length(R[,1])
 ## hierarchical model without F
 if (noF == TRUE) {
 
-  traceP <- T  # trace individual's parameters
-  R[,3] <- R[,3]+R[,4]
-  R <- R[,-4]
+    # merge wrong position and previous to wrong position 
+  R[,2] <- R[,2]+R[,3]
+  R <- R[,-3]
+  
   modelname = "SimpleSpan1noF.txt"
+  
+  # this is the base rate of categories
   ch <- c(1, 5, 6)
+  
   dataList = list(R = R,Nsub = Nsub, N = N, ch = ch)
-  subjectparameters = c("C" , "A" , "F" )
-  deltaparameters = c("DmuA", "DmuC", "DmuF")
-  muparameters =      c( "muA" , "muC" , "muF")
-  sgparameters =      c("sgA" ,  "sgC" , "sgF")  
+  
+  subjectparameters = c("C" , "A"  )
+  deltaparameters = c("DmuA", "DmuC")
+  muparameters =      c( "muA" , "muC" )
+  sgparameters =      c("sgA" ,  "sgC" )  
   parameters = c(muparameters,deltaparameters,subjectparameters)
-  modelname = "SimpleSpan1noF.txt"
+
   if (traceP == T) parameters <- c(parameters, "P")
   
   JAGSModel <- jags.parallel(data=dataList, inits=NULL, parameters.to.save=parameters, model.file = modelname,
@@ -54,8 +64,6 @@ if (noF == TRUE) {
   
   P = JAGSModel$BUGSoutput$sims.list$P
   JAGSModel$BUGSoutput$DIC
-  
-  setwd("~/Dropbox/AA_Neurometric/Paradigmen/SequenceMemory/Results/")
   
   # Plot how well the predictions are
   Predicted = array(NA,dim=c(Nsub,3))  
@@ -97,6 +105,7 @@ if (noF == TRUE) {
   plot(Predicted[1:23,3],Predicted[24:46,3])
 
 }
+
 
 ## hierarchical model with F
 if (noF == FALSE) {
