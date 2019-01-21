@@ -1,4 +1,4 @@
-## Sequence Memory Model with age
+# Simple behavioral analysis of the test-retest pilot data 2017
 
 rm(list=ls())
 setwd("~/Dropbox/AA_Neurometric/ANALYSES/SimplespanAnalyses/Modeling/")

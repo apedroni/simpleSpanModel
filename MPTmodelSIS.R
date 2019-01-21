@@ -1,4 +1,7 @@
-## Simple Span model
+## Simple Span model for Neurometric data
+# this script loads data and submits it to the model "SimpleSpan1noF.txt"
+# The individual parameters are stored in JAGSModel$BUGSoutput$sims.list 
+
 
 rm(list=ls())
 setwd("~/Dropbox/AA_Neurometric/ANALYSES/SimplespanAnalyses/Modeling/")
@@ -28,13 +31,12 @@ Nsub = length(R[,1])
   
   dataList = list(R = R,Nsub = Nsub, N = N, ch = ch)
   
-  subjectparameters = c("C" , "A"  )
-  deltaparameters = c("DmuA", "DmuC")
-  muparameters =      c( "muA" , "muC" )
-  sgparameters =      c("sgA" ,  "sgC" )  
+  subjectparameters = c("C" , "A"  )  # subject parameter distributions
+  muparameters =      c( "muA" , "muC" ) # mean of group level posterior distirbution
+  sgparameters =      c("sgA" ,  "sgC" )  # standard deviation of group level posterior distirbution
   parameters = c(muparameters,deltaparameters,subjectparameters)
 
-  if (traceP == T) parameters <- c(parameters, "P")
+  if (traceP == T) parameters <- c(parameters, "P") # Predicted value of the model
   
   JAGSModel <- jags.parallel(data=dataList, inits=NULL, parameters.to.save=parameters, model.file = modelname,
                              n.chains = 3, n.iter = 50000, n.burnin = 1000, n.thin = 5)
